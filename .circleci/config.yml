@@ -19,15 +19,15 @@ jobs:
             dotnet test \
               --no-build \
               --logger "trx;LogFileName=results.trx" \
-              --results-directory << parameters.output-test-dir >>
+              --results-directory "./<< parameters.output-test-dir >>"
       - run:
           name: "Install trx2junit and Convert Test Results"
           command: |
             dotnet tool install -g trx2junit
             export PATH="$PATH:/root/.dotnet/tools"
-            trx2junit "./$TEST_RESULTS_DIR/*.trx"
+            trx2junit "./<< parameters.output-test-dir >>/*.trx"
       - store_test_results:
-          path: << parameters.output-test-dir >>
+          path: "./<< parameters.output-test-dir >>"
 
 workflows:
   build:

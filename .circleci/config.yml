@@ -14,10 +14,11 @@ jobs:
           name: Build
           command: dotnet build
       - run:
-          name: Test
+          name: Run Unit Tests
           command: |
             dotnet test \
               --no-build \
+              --filter "Category=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./<< parameters.output-test-dir >>"
       - run:

@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoApi", "TodoApi\TodoApi.csproj", "{A9D74EAC-F660-8A73-E2EA-C8EF81470181}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoApi.Tests", "TodoApi.Tests\TodoApi.Tests.csproj", "{4367ECE2-1CF3-4194-9309-5FEEA4DEEC4B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoApi.Unit.Tests", "TodoApi.Unit.Tests\TodoApi.Unit.Tests.csproj", "{4367ECE2-1CF3-4194-9309-5FEEA4DEEC4B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoApi.Functional.Tests", "TodoApi.Functional.Tests\TodoApi.Functional.Tests.csproj", "{5D23A042-F779-4AFB-9362-90411ACC7A4E}"
 EndProject

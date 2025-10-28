@@ -9,7 +9,7 @@ public class ApiClient
     private readonly HttpClient _httpClient = new()
     {
         BaseAddress =
-            new Uri($"https://{Environment.GetEnvironmentVariable("HOST_NAME")}" ?? "https://localhost"),
+            new Uri($"https://{Environment.GetEnvironmentVariable("HOST_NAME") ?? "https://localhost"}"),
     };
 
     public async Task<IEnumerable<TodoItem>> GetTodosAsync()

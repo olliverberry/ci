@@ -1,8 +1,8 @@
 version: 2.1
 jobs:
-  docker:
-    - image: mcr.microsoft.com/dotnet/sdk:9.0
   build_and_test:
+    docker:
+    - image: mcr.microsoft.com/dotnet/sdk:9.0
     environment:
       TEST_RESULTS_DIR: test-results
     steps:
@@ -26,4 +26,7 @@ jobs:
       - store_test_results:
           path: "./$TEST_RESULTS_DIR"
 
-
+workflows:
+  build:
+    jobs:
+      - build_and_test

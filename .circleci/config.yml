@@ -1,10 +1,13 @@
 version: 2.1
 jobs:
-  docker:
-    - image: mcr.microsoft.com/dotnet/sdk:9.0
   build_and_test:
-    environment:
-      TEST_RESULTS_DIR: test-results
+    parameters:
+      output-test-dir:
+        type: string
+        default: test-results
+        description: 'test results directory'
+    docker:
+      - image: mcr.microsoft.com/dotnet/sdk:9.0
     steps:
       - checkout
       - run:
@@ -16,14 +19,17 @@ jobs:
             dotnet test \
               --no-build \
               --logger "trx;LogFileName=results.trx" \
-              --results-directory "./$TEST_RESULTS_DIR"
+              --results-directory "./<< parameters.output-test-dir >>"
       - run:
           name: "Install trx2junit and Convert Test Results"
           command: |
             dotnet tool install -g trx2junit
             export PATH="$PATH:/root/.dotnet/tools"
-            trx2junit "./$TEST_RESULTS_DIR/*.trx"
+            trx2junit "./<< parameters.output-test-dir >>/*.trx"
       - store_test_results:
-          path: "./$TEST_RESULTS_DIR"
+          path: "./<< parameters.output-test-dir >>"
 
-
+workflows:
+  build:
+    jobs:
+      - build_and_test

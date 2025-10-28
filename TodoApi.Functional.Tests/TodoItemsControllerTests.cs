@@ -261,7 +261,7 @@ public class TodoItemsControllerTests
         createdTodo.Should().Match<TodoItem>(t =>
             t.Id > 0 &&
             !string.IsNullOrEmpty(t.Name) &&
-            t.IsComplete != null);
+            t.IsComplete == true);
 
         // Cleanup
         await _client.DeleteTodoAsync(createdTodo.Id);

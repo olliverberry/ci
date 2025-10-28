@@ -1,6 +1,19 @@
 version: 2.1
 jobs:
-  build_and_test:
+  build:
+    docker: 
+      - image: mcr.microsoft.com/dotnet/sdk:9.0
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: dotnet build --configuration Release
+      - persist_to_workspace:
+          root: .
+          paths:
+           - .
+
+  unit-test:
     parameters:
       output-test-dir:
         type: string
@@ -9,15 +22,14 @@ jobs:
     docker:
       - image: mcr.microsoft.com/dotnet/sdk:9.0
     steps:
-      - checkout
-      - run:
-          name: Build
-          command: dotnet build
+      - attach_workspace:
+          at: .
       - run:
           name: Run Unit Tests
           command: |
             dotnet test \
               --no-build \
+              --configuration Release \
               --filter "Category=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./<< parameters.output-test-dir >>"
@@ -31,6 +43,9 @@ jobs:
           path: "./<< parameters.output-test-dir >>"
 
 workflows:
-  build:
+  build-unit-test:
     jobs:
-      - build_and_test
+      - build
+      - unit-test
+          requires:
+            - build

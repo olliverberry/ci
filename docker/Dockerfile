@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY *.csproj ./
+COPY *.csproj ci.sln ./
 RUN dotnet restore
 
 COPY . ./

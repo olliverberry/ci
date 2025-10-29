@@ -25,24 +25,9 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Debug - Environment Check
-          command: |
-            echo "=== Current directory ==="
-            pwd
-            echo "=== Directory contents ==="
-            ls -la
-            echo "=== Solution file exists? ==="
-            ls -la *.sln
-            echo "=== Test project files ==="
-            find . -name "*.csproj" -type f
-            echo "=== Test DLLs ==="
-            find . -name "*.dll" -path "*/bin/Release/*" -type f
-            echo "=== AssemblyInfo files ==="
-            find . -name "AssemblyInfo.cs" -type f
-      - run:
           name: Run Unit Tests
           command: |
-            dotnet test \
+            dotnet test ci.sln \
               --no-build \
               --verbosity detailed \
               --configuration Release \

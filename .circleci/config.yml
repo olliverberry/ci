@@ -22,9 +22,9 @@ jobs:
       - run:
           name: Run Unit Tests
           command: |
-            dotnet test TodoApi.Unit.Tests/TodoApi.Unit.Tests.csproj \
+            dotnet test \
               --configuration Release \
-              --verbosity detailed \
+              --filter "Categoty=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./<< parameters.output-test-dir >>"
       - run:

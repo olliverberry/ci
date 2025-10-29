@@ -66,10 +66,7 @@ jobs:
 workflows:
   build-and-test:
     when:
-      and:
-        - equal: ["push", << pipeline.event.name >>]
-        - not:
-            equal: ["main", << pipeline.git.branch >>]
+      equal: ["push", << pipeline.event.name >>]
     jobs:
       - build
       - unit-test:
@@ -78,11 +75,7 @@ workflows:
 
   build-image:
     when:
-      or:
-        - equal: ["pull_request", << pipeline.event.name >>]
-        - and:
-            - equal: ["push", << pipeline.event.name >>]
-            - equal: ["main", << pipeline.git.branch >>]
+      equal: ["pull_request", << pipeline.event.name >>]
     jobs:
       - build
       - unit-test:

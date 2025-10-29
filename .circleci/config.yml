@@ -29,12 +29,13 @@ jobs:
           command: |
             dotnet test \
               --no-build \
+              --verbosity detailed \
               --configuration Release \
               --filter "Category=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./<< parameters.output-test-dir >>"
       - run:
-          name: "Install trx2junit and Convert Test Results"
+          name: Install trx2junit and Convert Test Results
           command: |
             dotnet tool install -g trx2junit
             export PATH="$PATH:/root/.dotnet/tools"

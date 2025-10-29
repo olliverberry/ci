@@ -24,7 +24,7 @@ jobs:
           command: |
             dotnet test \
               --configuration Release \
-              --filter "TestCategoty=Unit" \
+              --filter "Category=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./<< parameters.output-test-dir >>"
       - run:

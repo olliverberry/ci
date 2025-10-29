@@ -24,7 +24,7 @@ jobs:
           command: |
             dotnet test \
               --configuration Release \
-              --filter "Categoty=Unit" \
+              --filter "TestCategoty=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./<< parameters.output-test-dir >>"
       - run:
@@ -36,7 +36,6 @@ jobs:
       - store_test_results:
           path: "./<< parameters.output-test-dir >>"
           
-
 workflows:
   build-unit-test:
     jobs:

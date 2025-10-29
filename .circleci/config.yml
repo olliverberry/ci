@@ -8,10 +8,6 @@ jobs:
       - run:
           name: Build
           command: dotnet build --configuration Release
-      - persist_to_workspace:
-          root: .
-          paths:
-           - .
 
   unit-test:
     parameters:
@@ -22,13 +18,11 @@ jobs:
     docker:
       - image: mcr.microsoft.com/dotnet/sdk:9.0
     steps:
-      - attach_workspace:
-          at: .
+      - checkout
       - run:
           name: Run Unit Tests
           command: |
             dotnet test TodoApi.Unit.Tests/TodoApi.Unit.Tests.csproj \
-              --no-build \
               --configuration Release \
               --verbosity detailed \
               --logger "trx;LogFileName=results.trx" \
@@ -41,6 +35,7 @@ jobs:
             trx2junit "./<< parameters.output-test-dir >>/*.trx"
       - store_test_results:
           path: "./<< parameters.output-test-dir >>"
+          
 
 workflows:
   build-unit-test:

@@ -64,35 +64,31 @@ jobs:
             docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
 
 workflows:
-  build-unit-test:
+  build-and-test:
+    when:
+      and:
+        - equal: ["push", << pipeline.event.name >>]
+        - not:
+            equal: ["main", << pipeline.git.branch >>]
     jobs:
-      - build:
-          filters:
-            branches:
-              ignore: main
+      - build
       - unit-test:
           requires:
             - build
-          filters:
-            branches:
-              ignore: main
 
-  build-test-and-push:
+  build-image:
+    when:
+      or:
+        - equal: ["pull_request", << pipeline.event.name >>]
+        - and:
+            - equal: ["push", << pipeline.event.name >>]
+            - equal: ["main", << pipeline.git.branch >>]
     jobs:
-      - build:
-          filters:
-            branches:
-              only: main
+      - build
       - unit-test:
           requires:
             - build
-          filters:
-            branches:
-              only: main
       - build-image-and-push:
           requires:
             - build
             - unit-test
-          filters:
-            branches:
-              only: main

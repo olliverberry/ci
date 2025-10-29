@@ -1,4 +1,8 @@
 version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@5.4.1
+
 jobs:
   build:
     docker: 
@@ -35,11 +39,60 @@ jobs:
             trx2junit "./<< parameters.output-test-dir >>/*.trx"
       - store_test_results:
           path: "./<< parameters.output-test-dir >>"
-          
+
+  build-image-and-push:
+    docker:
+      - image: cimg/aws:2025.01
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - aws-cli/setup:
+          role_arn: $AWS_ROLE_ARN
+          region: $AWS_REGION
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1 -f docker/Dockerfile .
+      - run:
+          name: Login to AWS ECR
+          command: |
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - run:
+          name: Push Docker Image
+          command: |
+            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
+
 workflows:
   build-unit-test:
     jobs:
-      - build
+      - build:
+          filters:
+            branches:
+              ignore: main
       - unit-test:
           requires:
             - build
+          filters:
+            branches:
+              ignore: main
+
+  build-test-and-push:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: main
+      - unit-test:
+          requires:
+            - build
+          filters:
+            branches:
+              only: main
+      - build-image-and-push:
+          requires:
+            - build
+            - unit-test
+          filters:
+            branches:
+              only: main

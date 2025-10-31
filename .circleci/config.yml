@@ -35,6 +35,20 @@ commands:
                 --username AWS \
                 --password-stdin << parameters.account_id >>.dkr.ecr.<< parameters.region >>.amazonaws.com
 
+  convert-test-results:
+    parameters:
+      output-test-dir:
+        type: string
+        default: test-results
+        description: 'test results directory'
+    steps:
+      - run:
+          name: Install trx2junit and Convert Test Results
+          command: |
+            dotnet tool install -g trx2junit
+            export PATH="$PATH:/root/.dotnet/tools"
+            trx2junit "./<< parameters.output-test-dir >>/*.trx"
+
 jobs:
   build:
     executor: dotnet
@@ -45,11 +59,8 @@ jobs:
           command: dotnet build --configuration Release
 
   unit-test:
-    parameters:
-      output-test-dir:
-        type: string
-        default: test-results
-        description: 'test results directory'
+    environment:
+      TEST_RESULTS_DIR: test-results
     executor: dotnet
     steps:
       - checkout
@@ -60,15 +71,11 @@ jobs:
               --configuration Release \
               --filter "Category=Unit" \
               --logger "trx;LogFileName=results.trx" \
-              --results-directory "./<< parameters.output-test-dir >>"
-      - run:
-          name: Install trx2junit and Convert Test Results
-          command: |
-            dotnet tool install -g trx2junit
-            export PATH="$PATH:/root/.dotnet/tools"
-            trx2junit "./<< parameters.output-test-dir >>/*.trx"
+              --results-directory "./$TEST_RESULTS_DIR"
+      - convert-test-results:
+          output-test-dir: "$TEST_RESULTS_DIR"
       - store_test_results:
-          path: "./<< parameters.output-test-dir >>"
+          path: "./$TEST_RESULTS_DIR"
 
   build-image-and-push:
     docker:
@@ -93,6 +100,25 @@ jobs:
           name: Push Docker Image
           command: |
             docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
+
+  functional-test:
+    executor: dotnet
+    environment:
+      TEST_RESULTS_DIR: test-results
+    steps:
+      - checkout
+      - run:
+          name: Run Functional Tests
+          command: |
+            dotnet test \
+              --configuration Release \
+              --filter "Category=Functional" \
+              --logger "trx;LogFileName=results.trx" \
+              --results-directory "./$TEST_RESULTS_DIR"
+      - convert-test-results:
+          output-test-dir: "$TEST_RESULTS_DIR"
+      - store_test_results:
+          path: "./$TEST_RESULTS_DIR"
 
 workflows:
   build-test-push:

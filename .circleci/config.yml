@@ -48,7 +48,7 @@ commands:
             && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
             && rm dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz
 
-  convert-test-results:
+  convert-and-store-test-results:
     parameters:
       output-test-dir:
         type: string
@@ -61,6 +61,8 @@ commands:
             dotnet tool install -g trx2junit
             export PATH="$PATH:/root/.dotnet/tools"
             trx2junit "./<< parameters.output-test-dir >>/*.trx"
+      - store_test_results:
+          path: "./<< parameters.output-test-dir >>"
 
 jobs:
   build:
@@ -84,10 +86,8 @@ jobs:
               --filter "Category=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./$TEST_RESULTS_DIR"
-      - convert-test-results:
+      - convert-and-store-test-results:
           output-test-dir: "$TEST_RESULTS_DIR"
-      - store_test_results:
-          path: "./$TEST_RESULTS_DIR"
 
   build-image-and-push:
     docker:
@@ -148,10 +148,8 @@ jobs:
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./$TEST_RESULTS_DIR" \
               -tl:off
-      - convert-test-results:
+      - convert-and-store-test-results:
           output-test-dir: "$TEST_RESULTS_DIR"
-      - store_test_results:
-          path: "./$TEST_RESULTS_DIR"
 
 workflows:
   build-test-push:

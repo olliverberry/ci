@@ -45,7 +45,7 @@ commands:
           name: Install dockerize
           command: |
             wget https://github.com/jwilder/dockerize/releases/download/<< parameters.dockerize_version >>/dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
-            && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
+            && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
             && rm dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz
 
   convert-test-results:

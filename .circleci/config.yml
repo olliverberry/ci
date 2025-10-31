@@ -131,4 +131,6 @@ workflows:
           requires:
             - build
             - unit-test
-      
+      - functional-test:
+          requires:
+            - build-image-and-push

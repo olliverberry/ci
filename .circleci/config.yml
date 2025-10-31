@@ -106,7 +106,7 @@ jobs:
       - image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
         aws_auth:
           oidc_role_arn: $AWS_ROLE_ARN
-      - image: cimg/postgres:18.0.0
+      - image: cimg/postgres:18.0
         environment:
           - POSTGRES_USER=${POSTGRES_USER:-mylogin}
           - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mypass}

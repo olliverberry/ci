@@ -3,10 +3,26 @@ version: 2.1
 orbs:
   aws-cli: circleci/aws-cli@5.4.1
 
+executors:
+  dotnet:
+    docker:
+      - image: mcr.microsoft.com/dotnet/sdk:9.0
+
+commands:
+  setup-aws-cli:
+    parameters:
+      role_arn:
+        type: string
+      region:
+        type: string
+    steps:
+      - aws-cli/setup:
+          role_arn: << parameters.role_arn >>
+          region: << parameters.region >>
+
 jobs:
   build:
-    docker: 
-      - image: mcr.microsoft.com/dotnet/sdk:9.0
+    executor: dotnet
     steps:
       - checkout
       - run:
@@ -19,8 +35,7 @@ jobs:
         type: string
         default: test-results
         description: 'test results directory'
-    docker:
-      - image: mcr.microsoft.com/dotnet/sdk:9.0
+    executor: dotnet
     steps:
       - checkout
       - run:
@@ -47,7 +62,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - aws-cli/setup:
+      - setup-aws-cli:
           role_arn: $AWS_ROLE_ARN
           region: $AWS_REGION
       - run:
@@ -63,6 +78,8 @@ jobs:
           command: |
             docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
 
+
+
 workflows:
   build-test-push:
     jobs:
@@ -74,16 +91,4 @@ workflows:
           requires:
             - build
             - unit-test
-
-  build-image:
-    when:
-      equal: ["pull_request", << pipeline.event.name >>]
-    jobs:
-      - build
-      - unit-test:
-          requires:
-            - build
-      - build-image-and-push:
-          requires:
-            - build
-            - unit-test
+      

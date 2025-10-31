@@ -120,7 +120,8 @@ jobs:
             dotnet test \
               --filter "Category=Functional" \
               --logger "trx;LogFileName=results.trx" \
-              --results-directory "./$TEST_RESULTS_DIR"
+              --results-directory "./$TEST_RESULTS_DIR" \
+              -tl:off
       - convert-test-results:
           output-test-dir: "$TEST_RESULTS_DIR"
       - store_test_results:

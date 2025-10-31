@@ -87,7 +87,7 @@ jobs:
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./$TEST_RESULTS_DIR"
       - convert-and-store-test-results:
-          output-test-dir: "$TEST_RESULTS_DIR"
+          output-test-dir: $TEST_RESULTS_DIR
 
   build-image-and-push:
     docker:
@@ -149,7 +149,7 @@ jobs:
               --results-directory "./$TEST_RESULTS_DIR" \
               -tl:off
       - convert-and-store-test-results:
-          output-test-dir: "$TEST_RESULTS_DIR"
+          output-test-dir: $TEST_RESULTS_DIR
 
 workflows:
   build-test-push:

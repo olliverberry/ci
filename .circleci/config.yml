@@ -20,6 +20,21 @@ commands:
           role_arn: << parameters.role_arn >>
           region: << parameters.region >>
 
+  login-to-aws-ecr:
+    parameters:
+      region:
+        type: string
+      account_id:
+        type: string
+    steps:
+      - run:
+          name: Login to AWS ECR
+          command: |
+            aws ecr get-login-password --region << parameters.region >> | \
+              docker login \
+                --username AWS \
+                --password-stdin << parameters.account_id >>.dkr.ecr.<< parameters.region >>.amazonaws.com
+
 jobs:
   build:
     executor: dotnet
@@ -68,17 +83,16 @@ jobs:
       - run:
           name: Build Docker Image
           command: |
-            docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1 -f docker/Dockerfile .
-      - run:
-          name: Login to AWS ECR
-          command: |
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+            docker build \
+              -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1 \
+              -f docker/Dockerfile .
+      - login-to-aws-ecr:
+          region: $AWS_REGION
+          account_id: $AWS_ACCOUNT_ID
       - run:
           name: Push Docker Image
           command: |
             docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
-
-
 
 workflows:
   build-test-push:

@@ -9,7 +9,7 @@ public class ApiClient
     private readonly HttpClient _httpClient = new()
     {
         BaseAddress =
-            new Uri($"https://{Environment.GetEnvironmentVariable("HOST_NAME") ?? "https://localhost"}"),
+            new Uri($"http://{Environment.GetEnvironmentVariable("HOST_NAME") ?? "localhost:8080"}"),
     };
 
     public async Task<IEnumerable<TodoItem>> GetTodosAsync()
@@ -23,7 +23,6 @@ public class ApiClient
     public async Task<TodoItem?> GetTodoByIdAsync(long id)
     {
         var response = await _httpClient.GetAsync($"/api/TodoItems/{id}");
-
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return null;

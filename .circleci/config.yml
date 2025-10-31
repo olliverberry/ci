@@ -107,12 +107,12 @@ jobs:
         aws_auth:
           oidc_role_arn: $AWS_ROLE_ARN
         environment:
-          ConnectionStrings__DefaultConnection: "Host=localhost;Username=$POSTGRES_USER;Password=$POSTGRES_PASSWORD;Database=$POSTGRES_DB"
+          ConnectionStrings__DefaultConnection: "Host=localhost;Username=testuser;Password=testpass;Database=testdb"
       - image: cimg/postgres:18.0
         environment:
-          POSTGRES_USER: $POSTGRES_USER
-          POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-          POSTGRES_DB: $POSTGRES_DB
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
     environment:
       TEST_RESULTS_DIR: test-results
       API_HOST: localhost
@@ -121,28 +121,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Wait for API to be Ready
+          name: Wait for Services to be Ready
           command: |
-            echo "Waiting for API to be ready at http://$API_HOST:$API_PORT..."
-            RETRY_COUNT=0
-            MAX_RETRIES=30
-            RETRY_DELAY=2
-            
-            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-              HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 --max-time 5 http://$API_HOST:$API_PORT/api/TodoItems)
-              
-              if [ "$HTTP_STATUS" = "200" ]; then
-                echo "API is ready! (HTTP $HTTP_STATUS)"
-                exit 0
-              fi
-              
-              RETRY_COUNT=$((RETRY_COUNT + 1))
-              echo "Attempt $RETRY_COUNT/$MAX_RETRIES: API returned HTTP $HTTP_STATUS, waiting ${RETRY_DELAY}s..."
-              sleep $RETRY_DELAY
-            done
-            
-            echo "API failed to become ready after $((MAX_RETRIES * RETRY_DELAY)) seconds"
-            exit 1
+            echo "Waiting for services to be ready..."
+            dockerize -wait tcp://localhost:5432 -timeout 1m && \
+              dockerize -wait tcp://localhost:8080 -timeout 1m
       - run:
           name: Run Functional Tests
           command: |

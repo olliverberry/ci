@@ -8,8 +8,8 @@ public class ApiClient
 {
     private readonly HttpClient _httpClient = new()
     {
-        BaseAddress =
-            new Uri($"http://{Environment.GetEnvironmentVariable("HOST_NAME") ?? "localhost:8080"}"),
+        BaseAddress = new Uri(Configuration.Instance.ApiBaseUrl),
+        Timeout = TimeSpan.FromSeconds(Configuration.Instance.RequestTimeout)
     };
 
     public async Task<IEnumerable<TodoItem>> GetTodosAsync()

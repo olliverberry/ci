@@ -64,14 +64,16 @@ jobs:
             docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
 
 workflows:
-  build-and-test:
-    when:
-      equal: ["push", << pipeline.event.name >>]
+  build-test-push:
     jobs:
       - build
       - unit-test:
           requires:
             - build
+      - build-image-and-push:
+          requires:
+            - build
+            - unit-test
 
   build-image:
     when:

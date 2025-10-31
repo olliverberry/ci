@@ -86,8 +86,7 @@ jobs:
               --filter "Category=Unit" \
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./$TEST_RESULTS_DIR"
-      - convert-and-store-test-results:
-          output-test-dir: $TEST_RESULTS_DIR
+      - convert-and-store-test-results
 
   build-image-and-push:
     docker:
@@ -148,8 +147,7 @@ jobs:
               --logger "trx;LogFileName=results.trx" \
               --results-directory "./$TEST_RESULTS_DIR" \
               -tl:off
-      - convert-and-store-test-results:
-          output-test-dir: $TEST_RESULTS_DIR
+      - convert-and-store-test-results
 
 workflows:
   build-test-push:

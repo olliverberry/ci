@@ -35,6 +35,19 @@ commands:
               --username AWS \
               --password-stdin << parameters.account_id >>.dkr.ecr.<< parameters.region >>.amazonaws.com
 
+  install-dockerize:
+    parameters:
+      dockerize_version:
+        type: string
+        default: v0.9.6
+    steps:
+      - run:
+          name: Install dockerize
+          command: |
+            wget https://github.com/jwilder/dockerize/releases/download<< parameters.dockerize_version >>/dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
+            && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
+            && rm dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz
+
   convert-test-results:
     parameters:
       output-test-dir:
@@ -120,12 +133,13 @@ jobs:
       API_REQUEST_TIMEOUT: 30
     steps:
       - checkout
+      - install-dockerize
       - run:
           name: Wait for Services to be Ready
           command: |
             echo "Waiting for services to be ready..."
-            dockerize -wait tcp://localhost:5432 -timeout 1m && \
-              dockerize -wait tcp://localhost:8080 -timeout 1m
+            dockerize -wait tcp://localhost:5432 -timeout 1m \
+              -wait tcp://localhost:8080 -timeout 1m
       - run:
           name: Run Functional Tests
           command: |

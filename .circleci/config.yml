@@ -7,6 +7,9 @@ executors:
   dotnet:
     docker:
       - image: mcr.microsoft.com/dotnet/sdk:9.0
+  aws:
+    docker:
+      - image: cimg/aws:2025.01
 
 commands:
   setup-aws-cli:
@@ -89,8 +92,7 @@ jobs:
       - convert-and-store-test-results
 
   build-image-and-push:
-    docker:
-      - image: cimg/aws:2025.01
+    executor: aws
     steps:
       - checkout
       - setup_remote_docker:
@@ -103,6 +105,7 @@ jobs:
           command: |
             docker build \
               -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1 \
+              -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:latest \
               -f docker/Dockerfile .
       - login-to-aws-ecr:
           region: $AWS_REGION
@@ -110,7 +113,7 @@ jobs:
       - run:
           name: Push Docker Image
           command: |
-            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
+            docker push -a $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
 
   functional-test:
     docker:
@@ -150,7 +153,7 @@ jobs:
       - convert-and-store-test-results
 
   deploy:
-    executor: dotnet
+    executor: aws
     steps:
       - checkout
       - run:

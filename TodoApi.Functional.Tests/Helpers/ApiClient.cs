@@ -8,8 +8,8 @@ public class ApiClient
 {
     private readonly HttpClient _httpClient = new()
     {
-        BaseAddress =
-            new Uri($"https://{Environment.GetEnvironmentVariable("HOST_NAME") ?? "https://localhost"}"),
+        BaseAddress = new Uri(Configuration.Instance.ApiBaseUrl),
+        Timeout = TimeSpan.FromSeconds(Configuration.Instance.RequestTimeout)
     };
 
     public async Task<IEnumerable<TodoItem>> GetTodosAsync()
@@ -23,7 +23,6 @@ public class ApiClient
     public async Task<TodoItem?> GetTodoByIdAsync(long id)
     {
         var response = await _httpClient.GetAsync($"/api/TodoItems/{id}");
-
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return null;

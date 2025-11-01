@@ -1,0 +1,26 @@
+services:
+  todoapi:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - 8080:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Username=${POSTGRES_USER:-mylogin};Password=${POSTGRES_PASSWORD:-mypass};
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:18
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-mylogin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mypass}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
+    driver: local

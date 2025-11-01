@@ -1,32 +1,60 @@
 version: 2.1
-jobs:
-  build:
-    docker: 
-      - image: mcr.microsoft.com/dotnet/sdk:9.0
-    steps:
-      - checkout
-      - run:
-          name: Build
-          command: dotnet build --configuration Release
 
-  unit-test:
+orbs:
+  aws-cli: circleci/aws-cli@5.4.1
+
+executors:
+  dotnet:
+    docker:
+      - image: mcr.microsoft.com/dotnet/sdk:9.0
+
+commands:
+  setup-aws-cli:
+    parameters:
+      role_arn:
+        type: string
+      region:
+        type: string
+    steps:
+      - aws-cli/setup:
+          role_arn: << parameters.role_arn >>
+          region: << parameters.region >>
+
+  login-to-aws-ecr:
+    parameters:
+      region:
+        type: string
+      account_id:
+        type: string
+    steps:
+      - run:
+          name: Login to AWS ECR
+          command: |
+            aws ecr get-login-password --region << parameters.region >> | \
+            docker login \
+              --username AWS \
+              --password-stdin << parameters.account_id >>.dkr.ecr.<< parameters.region >>.amazonaws.com
+
+  install-dockerize:
+    parameters:
+      dockerize_version:
+        type: string
+        default: v0.9.6
+    steps:
+      - run:
+          name: Install dockerize
+          command: |
+            wget https://github.com/jwilder/dockerize/releases/download/<< parameters.dockerize_version >>/dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
+            && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz \
+            && rm dockerize-linux-amd64-<< parameters.dockerize_version >>.tar.gz
+
+  convert-and-store-test-results:
     parameters:
       output-test-dir:
         type: string
         default: test-results
         description: 'test results directory'
-    docker:
-      - image: mcr.microsoft.com/dotnet/sdk:9.0
     steps:
-      - checkout
-      - run:
-          name: Run Unit Tests
-          command: |
-            dotnet test \
-              --configuration Release \
-              --filter "Category=Unit" \
-              --logger "trx;LogFileName=results.trx" \
-              --results-directory "./<< parameters.output-test-dir >>"
       - run:
           name: Install trx2junit and Convert Test Results
           command: |
@@ -35,11 +63,128 @@ jobs:
             trx2junit "./<< parameters.output-test-dir >>/*.trx"
       - store_test_results:
           path: "./<< parameters.output-test-dir >>"
-          
+
+jobs:
+  build:
+    executor: dotnet
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: dotnet build --configuration Release
+
+  unit-test:
+    environment:
+      TEST_RESULTS_DIR: test-results
+    executor: dotnet
+    steps:
+      - checkout
+      - run:
+          name: Run Unit Tests
+          command: |
+            dotnet test \
+              --filter "Category=Unit" \
+              --logger "trx;LogFileName=results.trx" \
+              --results-directory "./$TEST_RESULTS_DIR"
+      - convert-and-store-test-results
+
+  build-image-and-push:
+    docker:
+      - image: cimg/aws:2025.01
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - setup-aws-cli:
+          role_arn: $AWS_ROLE_ARN
+          region: $AWS_REGION
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build \
+              -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1 \
+              -f docker/Dockerfile .
+      - login-to-aws-ecr:
+          region: $AWS_REGION
+          account_id: $AWS_ACCOUNT_ID
+      - run:
+          name: Push Docker Image
+          command: |
+            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
+
+  functional-test:
+    docker:
+      - image: mcr.microsoft.com/dotnet/sdk:9.0
+      - image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
+        aws_auth:
+          oidc_role_arn: $AWS_ROLE_ARN
+        environment:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Username=testuser;Password=testpass;Database=testdb"
+      - image: cimg/postgres:18.0
+        environment:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+    environment:
+      TEST_RESULTS_DIR: test-results
+      API_HOST: localhost
+      API_PORT: 8080
+      API_REQUEST_TIMEOUT: 30
+    steps:
+      - checkout
+      - install-dockerize
+      - run:
+          name: Wait for Services to be Ready
+          command: |
+            echo "Waiting for services to be ready..."
+            dockerize -wait tcp://localhost:5432 -timeout 1m \
+              -wait tcp://localhost:8080 -timeout 1m
+      - run:
+          name: Run Functional Tests
+          command: |
+            dotnet test \
+              --filter "Category=Functional" \
+              --logger "trx;LogFileName=results.trx" \
+              --results-directory "./$TEST_RESULTS_DIR" \
+              -tl:off
+      - convert-and-store-test-results
+
+  deploy:
+    executor: dotnet
+    steps:
+      - checkout
+      - run:
+          name: Deploy
+          command: |
+            echo "Deploying..."
+
 workflows:
-  build-unit-test:
+  build-test:
+    when:
+      not:
+        equal: [ main, << pipeline.git.branch >> ]
     jobs:
       - build
-      - unit-test:
+      - unit-test
+
+  release:
+    when:
+      equal: [ main, << pipeline.git.branch >> ]
+    jobs:
+      - build
+      - unit-test
+      - build-image-and-push:
           requires:
             - build
+            - unit-test
+      - functional-test:
+          requires:
+            - build-image-and-push
+      - hold:
+          type: approval
+          requires:
+            - functional-test
+      - deploy:
+          context: aws-prod
+          requires:
+            - hold

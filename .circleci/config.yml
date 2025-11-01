@@ -113,7 +113,7 @@ jobs:
       - run:
           name: Push Docker Image
           command: |
-            docker push -a $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci:$CIRCLE_SHA1
+            docker push -a $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/olliverberry/ci
 
   functional-test:
     docker:

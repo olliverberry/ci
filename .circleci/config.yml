@@ -149,8 +149,27 @@ jobs:
               -tl:off
       - convert-and-store-test-results
 
+  deploy:
+    executor: dotnet
+    steps:
+      - checkout
+      - run:
+          name: Deploy
+          command: |
+            echo "Deploying..."
+
 workflows:
-  build-test-push:
+  build-test:
+    when:
+      not:
+        equal: [ main, << pipeline.git.branch >> ]
+    jobs:
+      - build
+      - unit-test
+
+  release:
+    when:
+      equal: [ main, << pipeline.git.branch >> ]
     jobs:
       - build
       - unit-test
@@ -161,3 +180,11 @@ workflows:
       - functional-test:
           requires:
             - build-image-and-push
+      - hold:
+          type: approval
+          requires:
+            - functional-test
+      - deploy:
+          context: aws-prod
+          requires:
+            - hold
